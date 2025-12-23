@@ -1,0 +1,177 @@
+# ============================================================================
+# Example Terraform Variables Configuration
+# ============================================================================
+# Copy this file to terraform.tfvars and customize for your deployment:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# WARNING: terraform.tfvars contains sensitive configuration and should
+# NEVER be committed to version control!
+# ============================================================================
+
+# ============================================================================
+# General Configuration
+# ============================================================================
+
+# AWS region for resource deployment
+# Options: us-east-1, us-west-2, eu-west-1, etc.
+aws_region = "us-east-1"
+
+# Environment name - affects resource naming and configuration
+# Options: dev, staging, prod
+environment = "dev"
+
+# Project name - used as prefix for all resource names
+# Must be lowercase, alphanumeric, and hyphens only
+project_name = "agent-orchestration"
+
+# ============================================================================
+# Lambda Configuration
+# ============================================================================
+
+# Controller Lambda settings (orchestration engine)
+controller_memory  = 1024  # MB (min: 128, max: 10240)
+controller_timeout = 900   # seconds (15 minutes max)
+
+# Callback Lambda settings (agent response handler)
+callback_memory  = 256  # MB
+callback_timeout = 30   # seconds
+
+# Lambda architecture
+# Options: "arm64" (recommended, cheaper) or "x86_64"
+lambda_architecture = "arm64"
+
+# Python runtime version
+# Options: "python3.12", "python3.11", "python3.10"
+lambda_runtime = "python3.12"
+
+# ============================================================================
+# Workflow Configuration
+# ============================================================================
+
+# Timeout for human approval callbacks (hours)
+# After this period, workflow will timeout waiting for approval
+approval_timeout_hours = 24
+
+# Number of days to retain workflow state in DynamoDB (via TTL)
+# After this period, completed/failed workflows are automatically deleted
+workflow_state_retention_days = 14
+
+# ============================================================================
+# Agent Configuration
+# ============================================================================
+
+# Agent types to create ECR repositories for
+# Default: ["researcher", "analyst", "writer"]
+# Uncomment to customize:
+# agent_types = ["researcher", "analyst", "writer", "reviewer"]
+
+# Enable vulnerability scanning for container images
+enable_container_image_scanning = true
+
+# ============================================================================
+# Storage Configuration
+# ============================================================================
+
+# Enable versioning for the artifact S3 bucket
+# Recommended: true for production, false for dev to reduce costs
+artifact_bucket_versioning = true
+
+# Number of days before transitioning artifacts to cheaper storage
+# After this period: Standard -> Standard-IA -> Glacier -> Delete
+artifact_retention_days = 90
+
+# ============================================================================
+# Observability Configuration
+# ============================================================================
+
+# Enable AWS X-Ray distributed tracing
+# Recommended: true for production, false for dev to reduce costs
+enable_xray_tracing = true
+
+# CloudWatch Logs retention period (days)
+# Valid values: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653
+log_retention_days = 7
+
+# Enable access logging for API Gateway
+enable_api_access_logging = true
+
+# ============================================================================
+# Security Configuration
+# ============================================================================
+
+# Enable IAM authentication for API Gateway endpoints
+# If false, endpoints are publicly accessible (not recommended for production)
+enable_api_gateway_auth = true
+
+# CIDR blocks allowed to invoke API Gateway
+# Empty list = allow all (not recommended for production)
+# Example: ["10.0.0.0/8", "192.168.1.0/24"]
+allowed_cidr_blocks = []
+
+# ============================================================================
+# Resource Tagging
+# ============================================================================
+
+# Additional custom tags to apply to all resources
+# These merge with default tags (Project, Environment, ManagedBy, etc.)
+additional_tags = {
+  # Owner       = "platform-team"
+  # CostCenter  = "engineering"
+  # Compliance  = "hipaa"
+  # DataClass   = "confidential"
+}
+
+# ============================================================================
+# Example Configurations for Different Environments
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# DEVELOPMENT ENVIRONMENT (Cost-Optimized)
+# ---------------------------------------------------------------------------
+# Uncomment and customize for development:
+#
+# environment                    = "dev"
+# controller_memory              = 512
+# log_retention_days             = 1
+# enable_xray_tracing            = false
+# artifact_bucket_versioning     = false
+# artifact_retention_days        = 30
+# enable_container_image_scanning = false
+# workflow_state_retention_days  = 7
+
+# ---------------------------------------------------------------------------
+# STAGING ENVIRONMENT (Balanced)
+# ---------------------------------------------------------------------------
+# Uncomment and customize for staging:
+#
+# environment                    = "staging"
+# controller_memory              = 1024
+# log_retention_days             = 7
+# enable_xray_tracing            = true
+# artifact_bucket_versioning     = true
+# artifact_retention_days        = 60
+# enable_container_image_scanning = true
+# workflow_state_retention_days  = 14
+
+# ---------------------------------------------------------------------------
+# PRODUCTION ENVIRONMENT (Performance & Reliability)
+# ---------------------------------------------------------------------------
+# Uncomment and customize for production:
+#
+# environment                    = "prod"
+# controller_memory              = 2048
+# controller_timeout             = 900
+# log_retention_days             = 30
+# enable_xray_tracing            = true
+# artifact_bucket_versioning     = true
+# artifact_retention_days        = 90
+# enable_container_image_scanning = true
+# workflow_state_retention_days  = 30
+# approval_timeout_hours         = 48
+# enable_api_gateway_auth        = true
+# allowed_cidr_blocks            = ["10.0.0.0/8"]  # Internal only
+# additional_tags = {
+#   Compliance  = "sox"
+#   DataClass   = "confidential"
+#   BackupPolicy = "daily"
+# }

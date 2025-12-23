@@ -1,0 +1,52 @@
+{
+  "name": "analyst-agent",
+  "version": "1.0.0",
+  "description": "Analysis specialist agent for synthesizing research data and producing structured insights",
+  "author": "AgentOrchestration",
+  "capabilities": {
+    "analyze": {
+      "description": "Analyze research data and produce structured insights with confidence scores",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "research_data": {
+            "type": "object",
+            "description": "Research findings to analyze"
+          },
+          "workflow_id": {
+            "type": "string",
+            "description": "Parent workflow identifier for artifact tracking"
+          },
+          "callback_url": {
+            "type": "string",
+            "description": "URL to callback when async task completes"
+          },
+          "callback_token": {
+            "type": "string",
+            "description": "Token for callback authentication"
+          }
+        },
+        "required": ["research_data", "workflow_id"]
+      }
+    }
+  },
+  "communication": {
+    "protocol": "A2A",
+    "transport": "HTTP-JSON-RPC",
+    "encoding": "json",
+    "endpoints": [
+      {
+        "url": "/",
+        "port": 9000
+      }
+    ]
+  },
+  "authentication": {
+    "type": "AWS_SigV4",
+    "service": "bedrock-agentcore"
+  },
+  "tools": [
+    "save_artifact",
+    "analyze_data"
+  ]
+}

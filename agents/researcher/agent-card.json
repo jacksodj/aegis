@@ -1,0 +1,307 @@
+{
+  "name": "researcher-agent",
+  "version": "1.0.0",
+  "description": "Research specialist agent for gathering and synthesizing information from multiple sources. Capable of web search, document analysis, and comprehensive research synthesis.",
+  "author": "AgentOrchestration",
+  "license": "MIT",
+
+  "capabilities": {
+    "research": {
+      "description": "Gather comprehensive information on a topic from multiple sources",
+      "longDescription": "Performs deep research using web search, document analysis, and synthesis. Can handle topics of varying complexity with configurable depth and source filtering.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "description": "The research topic or question to investigate",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Additional parameters to control research behavior",
+            "properties": {
+              "depth": {
+                "type": "string",
+                "description": "Depth of research to perform",
+                "enum": ["basic", "comprehensive", "deep"],
+                "default": "comprehensive"
+              },
+              "sources": {
+                "type": "array",
+                "description": "Source types to prioritize (e.g., academic, industry, technical)",
+                "items": {
+                  "type": "string"
+                },
+                "examples": [
+                  ["academic", "scientific"],
+                  ["industry", "technical"],
+                  ["all"]
+                ]
+              },
+              "max_results": {
+                "type": "integer",
+                "description": "Maximum number of sources to gather",
+                "default": 10,
+                "minimum": 1,
+                "maximum": 50
+              },
+              "time_range": {
+                "type": "object",
+                "description": "Optional time range for sources",
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          },
+          "workflow_id": {
+            "type": "string",
+            "description": "Parent workflow identifier for artifact tracking and correlation",
+            "pattern": "^[a-zA-Z0-9-_]+$"
+          },
+          "callback_url": {
+            "type": "string",
+            "description": "URL to send callback notification when async task completes",
+            "format": "uri",
+            "examples": [
+              "https://api.example.com/callbacks/workflow-123"
+            ]
+          },
+          "callback_token": {
+            "type": "string",
+            "description": "Authentication token for callback verification",
+            "minLength": 10
+          }
+        },
+        "required": ["topic", "workflow_id"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string"
+          },
+          "research_type": {
+            "type": "string"
+          },
+          "executive_summary": {
+            "type": "string"
+          },
+          "key_findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "finding": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "confidence": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high"]
+                },
+                "sources": {
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "detailed_analysis": {
+            "type": "object"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sources_cited": {
+            "type": "array"
+          },
+          "research_gaps": {
+            "type": "array"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      },
+      "maxDuration": "PT8H",
+      "maxArtifactSize": "100MB"
+    }
+  },
+
+  "communication": {
+    "protocol": "A2A",
+    "version": "1.0",
+    "transport": "HTTP-JSON-RPC",
+    "encoding": "json",
+    "endpoints": [
+      {
+        "name": "primary",
+        "description": "Primary invocation endpoint",
+        "url": "/invocations",
+        "port": 8080,
+        "methods": ["POST"],
+        "contentTypes": ["application/json"]
+      },
+      {
+        "name": "a2a",
+        "description": "A2A protocol endpoint",
+        "url": "/",
+        "port": 9000,
+        "methods": ["POST"],
+        "contentTypes": ["application/json"]
+      },
+      {
+        "name": "health",
+        "description": "Health check endpoint",
+        "url": "/ping",
+        "port": 8080,
+        "methods": ["GET"]
+      },
+      {
+        "name": "discovery",
+        "description": "Agent metadata discovery",
+        "url": "/.well-known/agent-card.json",
+        "port": 8080,
+        "methods": ["GET"]
+      }
+    ]
+  },
+
+  "authentication": {
+    "type": "AWS_SigV4",
+    "service": "bedrock-agentcore",
+    "region": "us-east-1",
+    "callbackAuthentication": {
+      "type": "token",
+      "header": "X-Callback-Token",
+      "tokenSource": "request_payload"
+    }
+  },
+
+  "tools": [
+    {
+      "name": "web_search",
+      "description": "Search the web for information on a topic",
+      "type": "built-in"
+    },
+    {
+      "name": "search_documents",
+      "description": "Search internal documents and knowledge bases",
+      "type": "built-in"
+    },
+    {
+      "name": "save_artifact",
+      "description": "Save large content to S3 for later retrieval",
+      "type": "built-in"
+    },
+    {
+      "name": "synthesize_research",
+      "description": "Synthesize multiple sources into structured findings",
+      "type": "built-in"
+    }
+  ],
+
+  "runtime": {
+    "platform": "linux/amd64",
+    "language": "python",
+    "version": "3.11",
+    "framework": "fastapi",
+    "dependencies": [
+      "fastapi>=0.111.0",
+      "uvicorn>=0.30.0",
+      "httpx>=0.27.0",
+      "boto3>=1.34.0"
+    ]
+  },
+
+  "resources": {
+    "memory": "2Gi",
+    "cpu": "1",
+    "storage": "10Gi",
+    "ephemeralStorage": "5Gi"
+  },
+
+  "sessionConfig": {
+    "maxDuration": "PT8H",
+    "idleTimeout": "PT30M",
+    "healthCheckInterval": "PT30S",
+    "healthCheckPath": "/ping",
+    "healthCheckExpectedStatus": "HealthyBusy"
+  },
+
+  "observability": {
+    "logging": {
+      "enabled": true,
+      "level": "INFO",
+      "format": "json",
+      "destination": "cloudwatch"
+    },
+    "tracing": {
+      "enabled": true,
+      "provider": "xray",
+      "samplingRate": 1.0
+    },
+    "metrics": {
+      "enabled": true,
+      "provider": "cloudwatch",
+      "namespace": "AgentCore/ResearcherAgent"
+    }
+  },
+
+  "errorHandling": {
+    "retryPolicy": {
+      "maxAttempts": 3,
+      "backoffMultiplier": 2,
+      "initialBackoff": "PT5S",
+      "maxBackoff": "PT2M"
+    },
+    "timeoutHandling": {
+      "enabled": true,
+      "defaultTimeout": "PT15M",
+      "callbackOnTimeout": true
+    }
+  },
+
+  "metadata": {
+    "tags": [
+      "research",
+      "information-gathering",
+      "synthesis",
+      "multi-agent"
+    ],
+    "category": "research",
+    "maturity": "mvp",
+    "supportedRegions": [
+      "us-east-1",
+      "us-west-2",
+      "eu-west-1"
+    ],
+    "pricing": {
+      "model": "pay-per-use",
+      "estimatedCostPerInvocation": "$0.01-$0.50"
+    },
+    "documentation": "https://github.com/example/researcher-agent/README.md",
+    "support": {
+      "email": "support@example.com",
+      "slack": "#agent-support"
+    }
+  },
+
+  "schema_version": "1.0.0",
+  "updated_at": "2025-12-23T00:00:00Z"
+}

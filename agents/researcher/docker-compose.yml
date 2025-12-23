@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  researcher-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: researcher-agent:latest
+    container_name: researcher-agent
+    ports:
+      - "8080:8080"  # HTTP invocations
+      - "9000:9000"  # A2A protocol
+      - "8000:8000"  # MCP tools (future)
+    environment:
+      # AWS Configuration
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+
+      # Agent Configuration
+      - MODEL_ID=${MODEL_ID:-anthropic.claude-3-5-sonnet-20241022-v2:0}
+      - ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-aegis-artifacts}
+      - CALLBACK_API_URL=${CALLBACK_API_URL:-http://host.docker.internal:8000/callbacks}
+
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+    restart: unless-stopped
+
+    # Resource limits (optional)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Volumes for local development
+    volumes:
+      # Mount source code for development (comment out for production)
+      - ./src:/app/src:ro
+      - ./agent-card.json:/app/.well-known/agent-card.json:ro
+
+    networks:
+      - agent-network
+
+networks:
+  agent-network:
+    driver: bridge
+    name: aegis-agent-network

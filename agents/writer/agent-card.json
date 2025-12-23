@@ -1,0 +1,60 @@
+{
+  "name": "writer-agent",
+  "version": "1.0.0",
+  "description": "Writer specialist agent for producing formatted research reports with executive summaries, findings, and recommendations",
+  "author": "AgentOrchestration",
+  "capabilities": {
+    "write_report": {
+      "description": "Generate a comprehensive formatted report from analysis results",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "The task type (typically 'write_report')"
+          },
+          "analysis": {
+            "type": "object",
+            "description": "Analysis results containing findings, insights, and data"
+          },
+          "feedback": {
+            "type": "string",
+            "description": "Optional human feedback to incorporate into the report"
+          },
+          "workflow_id": {
+            "type": "string",
+            "description": "Parent workflow identifier for artifact tracking"
+          },
+          "callback_url": {
+            "type": "string",
+            "description": "URL to callback when async task completes"
+          },
+          "callback_token": {
+            "type": "string",
+            "description": "Token for callback authentication"
+          }
+        },
+        "required": ["task", "analysis", "workflow_id"]
+      }
+    }
+  },
+  "communication": {
+    "protocol": "A2A",
+    "transport": "HTTP-JSON-RPC",
+    "encoding": "json",
+    "endpoints": [
+      {
+        "url": "/",
+        "port": 9000
+      }
+    ]
+  },
+  "authentication": {
+    "type": "AWS_SigV4",
+    "service": "bedrock-agentcore"
+  },
+  "tools": [
+    "save_artifact",
+    "format_report"
+  ]
+}

@@ -1,0 +1,2 @@
+# No Python dependencies - using Terraform for infrastructure
+# See /terraform directory

@@ -1,0 +1,245 @@
+================================================================================
+  DURABLE LAMBDA CONTROLLER - ARCHITECTURE DIAGRAM
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CLIENT REQUESTS                                    │
+│                                                                              │
+│   API Gateway: POST /workflows  │  Lambda: Invoke directly                  │
+└────────────────────────┬────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      CONTROLLER (handler.py)                                 │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │  @durable_execution decorator                                          │ │
+│  │  - Creates DurableContext                                              │ │
+│  │  - Manages workflow lifecycle                                          │ │
+│  │  - Handles checkpoints and callbacks                                   │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │  handler(event, context) - Main Workflow                               │ │
+│  │                                                                        │ │
+│  │  Step 1: init_workflow()                                               │ │
+│  │    └─> Create DynamoDB record                                          │ │
+│  │                                                                        │ │
+│  │  Step 2: invoke_agent_with_callback() - Research                       │ │
+│  │    └─> dispatch_agent_task() → Researcher Agent                       │ │
+│  │    └─> wait_for_callback() → Suspend workflow                         │ │
+│  │    └─> fetch_artifact() → Get S3 result                               │ │
+│  │                                                                        │ │
+│  │  Step 3: invoke_agent_with_callback() - Analysis                       │ │
+│  │    └─> dispatch_agent_task() → Analyst Agent                          │ │
+│  │    └─> wait_for_callback() → Suspend workflow                         │ │
+│  │                                                                        │ │
+│  │  Step 4: request_approval()                                            │ │
+│  │    └─> Send SNS notification                                           │ │
+│  │    └─> Emit EventBridge event                                          │ │
+│  │    └─> Store analysis in S3                                            │ │
+│  │                                                                        │ │
+│  │  Step 5: wait_for_callback() - Human Approval                          │ │
+│  │    └─> Suspend up to 24 hours                                          │ │
+│  │                                                                        │ │
+│  │  Step 6: invoke_agent_with_callback() - Writing                        │ │
+│  │    └─> dispatch_agent_task() → Writer Agent                           │ │
+│  │    └─> wait_for_callback() → Suspend workflow                         │ │
+│  │                                                                        │ │
+│  │  Step 7: finalize_workflow()                                           │ │
+│  │    └─> Store report in S3                                              │ │
+│  │    └─> Generate presigned URL                                          │ │
+│  │    └─> Update status to COMPLETED                                      │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+└────────────────────┬──────────────────┬──────────────────┬──────────────────┘
+                     │                  │                  │
+                     ▼                  ▼                  ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          UTILITIES (utils.py)                                 │
+│                                                                               │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │  S3 Operations   │  │  DynamoDB Ops    │  │  Client Mgmt     │           │
+│  │                  │  │                  │  │                  │           │
+│  │  store_artifact  │  │  create_workflow │  │  get_s3_client   │           │
+│  │  fetch_artifact  │  │  update_status   │  │  get_dynamodb    │           │
+│  │  presigned_url   │  │  get_state       │  │  get_agentcore   │           │
+│  │  parse_s3_uri    │  │  record_step     │  │                  │           │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘           │
+│                                                                               │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │  Exceptions      │  │  Helpers         │  │  Logging         │           │
+│  │                  │  │                  │  │                  │           │
+│  │  WorkflowError   │  │  is_large        │  │  structlog       │           │
+│  │  AgentError      │  │  sanitize_error  │  │  JSON format     │           │
+│  │  ArtifactError   │  │  validate_params │  │  Context bind    │           │
+│  │  StateError      │  │  format_payload  │  │                  │           │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘           │
+└───────────────────────────────────────────────────────────────────────────────┘
+                     │                  │                  │
+                     ▼                  ▼                  ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            AWS SERVICES                                       │
+│                                                                               │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │  DynamoDB        │  │  S3              │  │  Bedrock         │           │
+│  │  ────────────    │  │  ──              │  │  AgentCore       │           │
+│  │  Workflows Table │  │  Artifact Bucket │  │  ────────────    │           │
+│  │                  │  │                  │  │                  │           │
+│  │  - workflow_id   │  │  /artifacts/     │  │  Researcher ARN  │           │
+│  │  - status        │  │  /reports/       │  │  Analyst ARN     │           │
+│  │  - topic         │  │  /approvals/     │  │  Writer ARN      │           │
+│  │  - parameters    │  │                  │  │                  │           │
+│  │  - steps[]       │  │  (encrypted)     │  │  A2A Protocol    │           │
+│  │  - timestamps    │  │                  │  │  JSON-RPC 2.0    │           │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘           │
+│                                                                               │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │  SNS             │  │  EventBridge     │  │  CloudWatch      │           │
+│  │  ───             │  │  ────────────    │  │  ──────────      │           │
+│  │  Approval Topic  │  │  Workflow Events │  │  Logs & Metrics  │           │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘           │
+└───────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+  DATA FLOW
+================================================================================
+
+1. REQUEST → Controller
+   ├─ Validate input
+   ├─ Generate workflow_id
+   └─ Create DurableContext
+
+2. INIT → DynamoDB
+   ├─ Create workflow record
+   ├─ Set status: RUNNING
+   └─ Initialize metadata
+
+3. RESEARCH → Agent
+   ├─ Format A2A request
+   ├─ Invoke Bedrock AgentCore
+   ├─ Provide callback URL/token
+   └─ Suspend workflow
+
+4. AGENT → Callback
+   ├─ Process task (up to 4 hours)
+   ├─ Store result in S3 (if large)
+   └─ POST to callback URL
+
+5. CALLBACK → Resume
+   ├─ Fetch S3 artifact
+   ├─ Update DynamoDB
+   └─ Continue to next step
+
+6. APPROVAL → Human
+   ├─ Store analysis in S3
+   ├─ Send SNS notification
+   ├─ Emit EventBridge event
+   └─ Suspend workflow
+
+7. HUMAN → Callback
+   ├─ Review analysis
+   ├─ Approve/reject
+   └─ POST to callback URL
+
+8. FINALIZE → Storage
+   ├─ Store final report in S3
+   ├─ Generate presigned URL
+   ├─ Update status: COMPLETED
+   └─ Return result
+
+================================================================================
+  COMPONENT INTERACTIONS
+================================================================================
+
+handler.py (Orchestration)
+    │
+    ├─> utils.py (S3 Operations)
+    │      └─> boto3.client('s3')
+    │
+    ├─> utils.py (DynamoDB Operations)
+    │      └─> boto3.resource('dynamodb')
+    │
+    ├─> utils.py (AgentCore Operations)
+    │      └─> boto3.client('bedrock-agentcore')
+    │
+    └─> Workflow Steps
+           ├─> init_workflow()
+           ├─> invoke_agent_with_callback()
+           │      ├─> dispatch_agent_task()
+           │      ├─> wait_for_callback()
+           │      └─> fetch_artifact()
+           ├─> request_approval()
+           └─> finalize_workflow()
+
+================================================================================
+  STATE TRANSITIONS
+================================================================================
+
+INITIALIZING
+    │
+    ├─> create_workflow_record()
+    │
+    ▼
+RUNNING (research_phase)
+    │
+    ├─> dispatch_agent_task()
+    ├─> Suspend (callback pending)
+    │
+    ▼
+RUNNING (analysis_phase)
+    │
+    ├─> dispatch_agent_task()
+    ├─> Suspend (callback pending)
+    │
+    ▼
+AWAITING_APPROVAL
+    │
+    ├─> request_approval()
+    ├─> Suspend (human decision)
+    │
+    ├────────────┬────────────┐
+    │            │            │
+    ▼            ▼            ▼
+RUNNING      REJECTED    (timeout)
+(writing)       │         FAILED
+    │           │
+    ▼           ▼
+COMPLETED   (end)
+
+================================================================================
+  FILE ORGANIZATION
+================================================================================
+
+controller/
+│
+├── handler.py              # Main orchestration logic
+│   ├── DurableContext      # Execution context
+│   ├── @durable_execution  # Decorator
+│   ├── handler()           # Main workflow
+│   ├── invoke_agent_with_callback()
+│   ├── init_workflow()
+│   ├── request_approval()
+│   ├── finalize_workflow()
+│   └── dispatch_agent_task()
+│
+├── utils.py                # Utility functions
+│   ├── S3 operations
+│   ├── DynamoDB operations
+│   ├── Client management
+│   ├── Custom exceptions
+│   ├── Helper functions
+│   └── Logging configuration
+│
+├── example_usage.py        # Usage examples
+│   ├── start_workflow_example()
+│   ├── check_workflow_status()
+│   ├── approve_workflow()
+│   └── monitor_workflow_progress()
+│
+├── README.md               # Main documentation
+├── IMPLEMENTATION_SUMMARY.md  # Implementation details
+├── QUICK_REFERENCE.md      # Developer reference
+├── ARCHITECTURE.txt        # This file
+└── requirements.txt        # Python dependencies
+
+================================================================================
