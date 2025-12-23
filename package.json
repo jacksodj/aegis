@@ -1,0 +1,15 @@
+{
+  "name": "serverless-durable-agents",
+  "version": "1.0.0",
+  "description": "Serverless Durable Agent Orchestration Platform",
+  "scripts": {
+    "cdk": "cdk",
+    "build": "cdk synth",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
+    "test": "pytest tests/"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.150.0"
+  }
+}

@@ -1,0 +1,7 @@
+# Root project dependencies
+aws-cdk-lib>=2.150.0
+constructs>=10.0.0
+boto3>=1.34.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+moto>=5.0.0

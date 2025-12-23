@@ -1,0 +1,4 @@
+# Durable Lambda Controller dependencies
+boto3>=1.34.0
+aws-lambda-powertools>=2.40.0
+structlog>=24.1.0
