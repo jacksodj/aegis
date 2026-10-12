@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a production-ready Durable Lambda Controller for serverless agent orchestration, following the specifications in `/home/user/aegis/serverless_durable_agent_orchestration_spec.md`.
+Successfully implemented a production-ready Durable Lambda Controller for serverless agent orchestration, following the specifications in [`docs/serverless_durable_agent_orchestration_spec.md`](../docs/serverless_durable_agent_orchestration_spec.md).
 
 **Implementation Date**: 2025-12-23
 **Total Lines of Code**: 1,420

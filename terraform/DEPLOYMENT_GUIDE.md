@@ -329,7 +329,7 @@ The configuration includes:
 
 ## Support
 
-- Main spec: `/home/user/aegis/serverless_durable_agent_orchestration_spec.md`
+- Main spec: [`docs/serverless_durable_agent_orchestration_spec.md`](../docs/serverless_durable_agent_orchestration_spec.md)
 - Controller code: `/home/user/aegis/controller/`
 - Callback code: `/home/user/aegis/callback/`
 - Agent code: `/home/user/aegis/agents/`

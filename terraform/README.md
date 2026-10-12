@@ -483,7 +483,7 @@ For production:
 ## Support
 
 For issues, questions, or contributions:
-- Review the main specification: `../serverless_durable_agent_orchestration_spec.md`
+- Review the main specification: `../docs/serverless_durable_agent_orchestration_spec.md`
 - Check implementation docs: `../controller/README.md`, `../callback/README.md`
 - View architecture diagrams: `../docs/`
 

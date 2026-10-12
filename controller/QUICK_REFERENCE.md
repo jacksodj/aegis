@@ -399,4 +399,4 @@ aws lambda get-function-configuration \
 - Full Documentation: `README.md`
 - Implementation Details: `IMPLEMENTATION_SUMMARY.md`
 - Usage Examples: `example_usage.py`
-- Specification: `/home/user/aegis/serverless_durable_agent_orchestration_spec.md`
+- Specification: [`docs/serverless_durable_agent_orchestration_spec.md`](../docs/serverless_durable_agent_orchestration_spec.md)
