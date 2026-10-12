@@ -357,4 +357,4 @@ Part of the Serverless Durable Agent Orchestration Platform.
 
 ## Support
 
-For issues or questions, refer to the main project documentation at `/home/user/aegis/serverless_durable_agent_orchestration_spec.md`.
+For issues or questions, refer to the main project documentation at [`docs/serverless_durable_agent_orchestration_spec.md`](../../docs/serverless_durable_agent_orchestration_spec.md).

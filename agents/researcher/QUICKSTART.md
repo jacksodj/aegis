@@ -324,7 +324,7 @@ BASE_URL=http://localhost:8080 ./test.sh health
 ## Support
 
 - Documentation: See `README.md`
-- Specification: `/home/user/aegis/serverless_durable_agent_orchestration_spec.md`
+- Specification: [`docs/serverless_durable_agent_orchestration_spec.md`](../../docs/serverless_durable_agent_orchestration_spec.md)
 - Issues: Check logs with `make logs`
 
 ---

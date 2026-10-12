@@ -263,7 +263,7 @@ See `requirements.txt`:
 
 ## References
 
-- [Serverless Durable Agent Orchestration Spec](/home/user/aegis/serverless_durable_agent_orchestration_spec.md)
+- [Serverless Durable Agent Orchestration Spec](../docs/serverless_durable_agent_orchestration_spec.md)
 - [AWS Lambda Durable Execution](https://docs.aws.amazon.com/lambda/)
 - [Amazon Bedrock AgentCore Runtime](https://docs.aws.amazon.com/bedrock/)
 - [A2A Protocol Specification](https://github.com/anthropics/agent-to-agent-protocol)
